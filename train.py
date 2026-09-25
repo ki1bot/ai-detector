@@ -35,6 +35,17 @@ RANDOM_STATE = 42
 FORMAT_VERSION = 2
 
 
+def empty_training_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "text": pd.Series(dtype="string"),
+            "label": pd.Series(dtype="int64"),
+            "source": pd.Series(dtype="string"),
+            "word_count": pd.Series(dtype="int64"),
+        }
+    )
+
+
 def normalize_text(value: str) -> str:
     text = (
         str(value)
@@ -70,33 +81,29 @@ def training_chunks(
 
     sentences = split_sentences(text)
 
-    chunks = []
-    current = []
+    chunks: list[str] = []
+    current: list[str] = []
     current_words = 0
 
-    def flush():
+    def flush() -> None:
         nonlocal current
         nonlocal current_words
 
         if current_words >= min_words:
             chunks.append(
-                " ".join(
-                    current
-                ).strip()
+                " ".join(current).strip()
             )
 
         current = []
         current_words = 0
 
     for sentence in sentences:
-        sentence_words = tokenize_words(
-            sentence
-        )
+        words = tokenize_words(sentence)
 
-        if not sentence_words:
+        if not words:
             continue
 
-        if len(sentence_words) > max_words:
+        if len(words) > max_words:
             flush()
 
             raw_words = sentence.split()
@@ -108,7 +115,8 @@ def training_chunks(
             ):
                 piece = " ".join(
                     raw_words[
-                        start:start + target_words
+                        start:
+                        start + target_words
                     ]
                 ).strip()
 
@@ -118,27 +126,20 @@ def training_chunks(
                     )
                     >= min_words
                 ):
-                    chunks.append(
-                        piece
-                    )
+                    chunks.append(piece)
 
             continue
 
         if (
             current
-            and current_words
-            + len(sentence_words)
+            and current_words + len(words)
             > max_words
         ):
             flush()
 
-        current.append(
-            sentence
-        )
+        current.append(sentence)
 
-        current_words += len(
-            sentence_words
-        )
+        current_words += len(words)
 
         if current_words >= target_words:
             flush()
@@ -152,9 +153,7 @@ def training_chunks(
         )
         >= 25
     ):
-        chunks.append(
-            text
-        )
+        chunks.append(text)
 
     return chunks
 
@@ -163,6 +162,9 @@ def clean_dataframe(
     dataframe: pd.DataFrame,
     source_name: str | None = None,
 ) -> pd.DataFrame:
+    if dataframe.empty:
+        return empty_training_frame()
+
     required = {
         "text",
         "label",
@@ -195,16 +197,16 @@ def clean_dataframe(
         ]
     )
 
-    frame["label"] = (
-        frame["label"]
-        .astype(int)
-    )
-
     frame = frame[
         frame["label"].isin(
             [0, 1]
         )
-    ]
+    ].copy()
+
+    frame["label"] = (
+        frame["label"]
+        .astype("int64")
+    )
 
     frame["word_count"] = (
         frame["text"]
@@ -213,6 +215,7 @@ def clean_dataframe(
                 tokenize_words(value)
             )
         )
+        .astype("int64")
     )
 
     frame = frame[
@@ -224,13 +227,14 @@ def clean_dataframe(
             frame["word_count"]
             <= 5000
         )
-    ]
+    ].copy()
 
     if "source" not in frame.columns:
         frame["source"] = (
             source_name
             or "external"
         )
+
     else:
         frame["source"] = (
             frame["source"]
@@ -248,11 +252,31 @@ def clean_dataframe(
             "source",
             "word_count",
         ]
-    ]
-
-    return frame.reset_index(
+    ].reset_index(
         drop=True
     )
+
+    frame["text"] = (
+        frame["text"]
+        .astype(str)
+    )
+
+    frame["label"] = (
+        frame["label"]
+        .astype("int64")
+    )
+
+    frame["source"] = (
+        frame["source"]
+        .astype(str)
+    )
+
+    frame["word_count"] = (
+        frame["word_count"]
+        .astype("int64")
+    )
+
+    return frame
 
 
 def load_primary_dataset() -> pd.DataFrame:
@@ -270,9 +294,7 @@ def load_primary_dataset() -> pd.DataFrame:
         "gemma4_id",
     )
 
-    return clean_dataframe(
-        frame
-    )
+    return clean_dataframe(frame)
 
 
 def has_explicit_ai_marker(
@@ -298,179 +320,347 @@ def has_explicit_ai_marker(
     )
 
 
-def sample_human_mc4(
-    limit: int,
-) -> list[str]:
-    stream = None
-    last_error = None
-
-    for config in (
-        "tiny",
-        "full",
-    ):
-        try:
-            stream = load_dataset(
-                "indonesian-nlp/mc4-id",
-                config,
-                split="train",
-                streaming=True,
-            )
-
-            break
-
-        except Exception as exception:
-            last_error = exception
-
-    if stream is None:
-        raise RuntimeError(
-            "Tidak dapat memuat corpus manusia "
-            f"mC4-ID: {last_error}"
+def get_stream(
+    repo_id: str,
+    config: str | None = None,
+    columns: tuple[str, ...] | None = None,
+):
+    if config is None:
+        dataset = load_dataset(
+            repo_id,
+            streaming=True,
         )
 
-    stream = stream.shuffle(
-        seed=RANDOM_STATE,
-        buffer_size=10000,
+    else:
+        dataset = load_dataset(
+            repo_id,
+            config,
+            streaming=True,
+        )
+
+    if "train" in dataset:
+        stream = dataset["train"]
+
+    else:
+        split_names = list(
+            dataset.keys()
+        )
+
+        if not split_names:
+            raise RuntimeError(
+                f"Dataset {repo_id} tidak memiliki split yang dapat dipakai."
+            )
+
+        stream = dataset[
+            split_names[0]
+        ]
+
+    if columns:
+        available_columns = (
+            stream.column_names
+            or []
+        )
+
+        selected_columns = [
+            column
+            for column in columns
+            if column in available_columns
+        ]
+
+        if selected_columns:
+            stream = stream.select_columns(
+                selected_columns
+            )
+
+    return stream
+
+
+def extract_first_text(
+    row: dict,
+    fields: tuple[str, ...],
+) -> str:
+    for field in fields:
+        value = row.get(field)
+
+        if (
+            isinstance(
+                value,
+                str,
+            )
+            and value.strip()
+        ):
+            return value
+
+    return ""
+
+
+def sample_human_public(
+    limit: int,
+) -> tuple[
+    list[str],
+    str | None,
+]:
+    candidates = (
+        (
+            "iqballx/indonesian_news_datasets",
+            None,
+            (
+                "content",
+                "text",
+                "news_text",
+            ),
+        ),
+        (
+            "fahadh4ilyas/indonesian_news_datasets",
+            None,
+            (
+                "content",
+                "text",
+                "news_text",
+            ),
+        ),
+        (
+            "ardimardiana/indonesian-political-news-clean",
+            None,
+            (
+                "news_text",
+                "content",
+                "text",
+            ),
+        ),
+        (
+            "indonesian-nlp/wikipedia-id",
+            None,
+            (
+                "text",
+                "content",
+            ),
+        ),
     )
 
-    collected = []
+    errors: list[str] = []
 
-    for row in stream:
-        value = row.get(
-            "text",
-            "",
-        )
+    for (
+        repo_id,
+        config,
+        fields,
+    ) in candidates:
+        collected: list[str] = []
 
-        for chunk in training_chunks(
-            value
-        ):
-            if has_explicit_ai_marker(
-                chunk
-            ):
-                continue
-
-            collected.append(
-                chunk
+        try:
+            stream = get_stream(
+                repo_id,
+                config,
+                columns=fields,
             )
 
-            if (
-                len(collected)
-                >= limit
-            ):
-                return collected
+            stream = stream.shuffle(
+                seed=RANDOM_STATE,
+                buffer_size=5000,
+            )
 
-    return collected
+            for row in stream:
+                value = extract_first_text(
+                    row,
+                    fields,
+                )
+
+                if not value:
+                    continue
+
+                for chunk in training_chunks(
+                    value
+                ):
+                    if has_explicit_ai_marker(
+                        chunk
+                    ):
+                        continue
+
+                    collected.append(
+                        chunk
+                    )
+
+                    if (
+                        len(collected)
+                        >= limit
+                    ):
+                        return (
+                            collected,
+                            repo_id,
+                        )
+
+            if collected:
+                return (
+                    collected,
+                    repo_id,
+                )
+
+            errors.append(
+                f"{repo_id}: tidak menemukan teks yang dapat dipakai"
+            )
+
+        except Exception as exception:
+            errors.append(
+                f"{repo_id}: {exception}"
+            )
+
+    if errors:
+        print(
+            "Peringatan sumber human publik:"
+        )
+
+        for error in errors:
+            print(
+                f"- {error}"
+            )
+
+    return (
+        [],
+        None,
+    )
 
 
 def sample_ai_gemini(
     limit: int,
-) -> list[str]:
-    stream = load_dataset(
-        "kreasof-ai/percakapan-indo",
-        split="train",
-        streaming=True,
+) -> tuple[
+    list[str],
+    str | None,
+]:
+    repo_id = (
+        "kreasof-ai/percakapan-indo"
     )
 
-    stream = stream.shuffle(
-        seed=RANDOM_STATE,
-        buffer_size=10000,
-    )
-
-    collected = []
-
-    for row in stream:
-        conversations = (
-            row.get(
-                "conversations"
-            )
-            or []
+    try:
+        stream = get_stream(
+            repo_id,
+            columns=(
+                "conversations",
+            ),
         )
 
-        for message in conversations:
+        stream = stream.shuffle(
+            seed=RANDOM_STATE,
+            buffer_size=5000,
+        )
+
+        collected: list[str] = []
+
+        for row in stream:
+            conversations = (
+                row.get(
+                    "conversations"
+                )
+                or []
+            )
+
             if not isinstance(
-                message,
-                dict,
+                conversations,
+                list,
             ):
                 continue
 
-            if (
-                str(
+            for message in conversations:
+                if not isinstance(
+                    message,
+                    dict,
+                ):
+                    continue
+
+                role = str(
                     message.get(
                         "role",
                         "",
                     )
                 ).lower()
-                != "assistant"
-            ):
-                continue
 
-            content = normalize_text(
-                message.get(
-                    "content",
-                    "",
+                if role != "assistant":
+                    continue
+
+                content = normalize_text(
+                    message.get(
+                        "content",
+                        "",
+                    )
                 )
+
+                if not content:
+                    continue
+
+                if has_explicit_ai_marker(
+                    content
+                ):
+                    continue
+
+                for chunk in training_chunks(
+                    content,
+                    min_words=30,
+                    target_words=130,
+                    max_words=220,
+                ):
+                    if has_explicit_ai_marker(
+                        chunk
+                    ):
+                        continue
+
+                    collected.append(
+                        chunk
+                    )
+
+                    if (
+                        len(collected)
+                        >= limit
+                    ):
+                        return (
+                            collected,
+                            repo_id,
+                        )
+
+        if collected:
+            return (
+                collected,
+                repo_id,
             )
 
-            if has_explicit_ai_marker(
-                content
-            ):
-                continue
+        return (
+            [],
+            None,
+        )
 
-            for chunk in training_chunks(
-                content,
-                min_words=30,
-                target_words=130,
-                max_words=220,
-            ):
-                collected.append(
-                    chunk
-                )
+    except Exception as exception:
+        print(
+            "Peringatan sumber AI publik "
+            f"{repo_id}: {exception}"
+        )
 
-                if (
-                    len(collected)
-                    >= limit
-                ):
-                    return collected
-
-    return collected
+        return (
+            [],
+            None,
+        )
 
 
 def load_public_augmentation(
     limit_per_class: int,
 ) -> pd.DataFrame:
     if limit_per_class <= 0:
-        return pd.DataFrame(
-            columns=[
-                "text",
-                "label",
-                "source",
-                "word_count",
-            ]
-        )
+        return empty_training_frame()
 
-    try:
-        human_texts = sample_human_mc4(
+    human_texts, human_source = (
+        sample_human_public(
             limit_per_class
         )
+    )
 
-        ai_texts = sample_ai_gemini(
+    ai_texts, ai_source = (
+        sample_ai_gemini(
             limit_per_class
         )
+    )
 
-    except Exception as exception:
-        print(
-            "Peringatan: augmentasi publik "
-            "dilewati karena gagal dimuat: "
-            f"{exception}"
-        )
-
-        return pd.DataFrame(
-            columns=[
-                "text",
-                "label",
-                "source",
-                "word_count",
-            ]
-        )
+    usable = min(
+        len(human_texts),
+        len(ai_texts),
+        limit_per_class,
+    )
 
     minimum = min(
         200,
@@ -480,57 +670,82 @@ def load_public_augmentation(
         ),
     )
 
-    if (
-        len(human_texts)
-        < minimum
-        or len(ai_texts)
-        < minimum
-    ):
+    if usable < minimum:
         print(
-            "Peringatan: augmentasi publik "
-            "tidak cukup seimbang dan tidak digunakan."
+            "Peringatan: data augmentasi publik "
+            "tidak cukup seimbang. "
+            f"Human={len(human_texts)}, "
+            f"AI={len(ai_texts)}, "
+            f"minimum={minimum}."
         )
 
-        return pd.DataFrame(
-            columns=[
-                "text",
-                "label",
-                "source",
-                "word_count",
-            ]
-        )
+        return empty_training_frame()
+
+    human_texts = (
+        human_texts[
+            :usable
+        ]
+    )
+
+    ai_texts = (
+        ai_texts[
+            :usable
+        ]
+    )
 
     human = pd.DataFrame(
         {
             "text": human_texts,
-            "label": 0,
-            "source": "mc4_id_human",
+            "label": np.zeros(
+                usable,
+                dtype=np.int64,
+            ),
+            "source": (
+                human_source
+                or "public_human_id"
+            ),
         }
     )
 
     ai = pd.DataFrame(
         {
             "text": ai_texts,
-            "label": 1,
-            "source": "gemini_flash_id",
+            "label": np.ones(
+                usable,
+                dtype=np.int64,
+            ),
+            "source": (
+                ai_source
+                or "public_ai_id"
+            ),
         }
     )
 
+    print(
+        "Augmentasi publik digunakan: "
+        f"{human_source or 'human'}={usable}, "
+        f"{ai_source or 'ai'}={usable}"
+    )
+
+    combined = pd.concat(
+        [
+            human,
+            ai,
+        ],
+        ignore_index=True,
+    )
+
     return clean_dataframe(
-        pd.concat(
-            [
-                human,
-                ai,
-            ],
-            ignore_index=True,
-        )
+        combined
     )
 
 
 def load_extra_csv(
     paths: list[str],
 ) -> pd.DataFrame:
-    frames = []
+    frames: list[
+        pd.DataFrame
+    ] = []
 
     for path_string in paths:
         path = Path(
@@ -553,18 +768,15 @@ def load_extra_csv(
         )
 
     if not frames:
-        return pd.DataFrame(
-            columns=[
-                "text",
-                "label",
-                "source",
-                "word_count",
-            ]
-        )
+        return empty_training_frame()
 
-    return pd.concat(
+    combined = pd.concat(
         frames,
         ignore_index=True,
+    )
+
+    return clean_dataframe(
+        combined
     )
 
 
@@ -650,23 +862,19 @@ def build_style_model() -> Pipeline:
 
 def component_probabilities(
     models: dict,
-    texts: pd.Series | list[str],
+    texts: list[str],
 ) -> np.ndarray:
-    text_values = list(
-        texts
-    )
-
     word_scores = (
         models["word"]
         .predict_proba(
-            text_values
+            texts
         )[:, 1]
     )
 
     char_scores = (
         models["char"]
         .predict_proba(
-            text_values
+            texts
         )[:, 1]
     )
 
@@ -674,7 +882,7 @@ def component_probabilities(
         models["style"]
         .predict_proba(
             stylometry_matrix(
-                text_values
+                texts
             )
         )[:, 1]
     )
@@ -691,7 +899,10 @@ def component_probabilities(
 def select_thresholds(
     y_true: np.ndarray,
     probabilities: np.ndarray,
-) -> tuple[float, float]:
+) -> tuple[
+    float,
+    float,
+]:
     human_scores = probabilities[
         y_true == 0
     ]
@@ -704,7 +915,10 @@ def select_thresholds(
         len(human_scores) < 20
         or len(ai_scores) < 20
     ):
-        return 0.25, 0.75
+        return (
+            0.22,
+            0.78,
+        )
 
     ai_threshold = float(
         np.quantile(
@@ -766,12 +980,14 @@ def evaluate(
     binary = (
         probabilities
         >= 0.5
-    ).astype(int)
+    ).astype(
+        np.int64
+    )
 
     selective = np.full(
         len(probabilities),
         -1,
-        dtype=int,
+        dtype=np.int64,
     )
 
     selective[
@@ -806,36 +1022,12 @@ def evaluate(
         1,
     )
 
-    ai_false_positive_rate = float(
-        np.sum(
-            (selective == 1)
-            & (y_true == 0)
-        )
-        / human_total
-    )
-
-    ai_detection_rate = float(
-        np.sum(
-            (selective == 1)
-            & (y_true == 1)
-        )
-        / ai_total
-    )
-
-    human_false_negative_rate = float(
-        np.sum(
-            (selective == 0)
-            & (y_true == 1)
-        )
-        / ai_total
-    )
-
-    selected_accuracy = None
+    selective_accuracy = None
 
     if np.any(
         selected_mask
     ):
-        selected_accuracy = float(
+        selective_accuracy = float(
             accuracy_score(
                 y_true[
                     selected_mask
@@ -904,16 +1096,40 @@ def evaluate(
             )
         ),
         "selective_accuracy": (
-            selected_accuracy
+            selective_accuracy
         ),
-        "ai_false_positive_rate": (
-            ai_false_positive_rate
+        "ai_false_positive_rate": float(
+            np.sum(
+                (
+                    selective == 1
+                )
+                & (
+                    y_true == 0
+                )
+            )
+            / human_total
         ),
-        "ai_detection_rate": (
-            ai_detection_rate
+        "ai_detection_rate": float(
+            np.sum(
+                (
+                    selective == 1
+                )
+                & (
+                    y_true == 1
+                )
+            )
+            / ai_total
         ),
-        "ai_missed_as_human_rate": (
-            human_false_negative_rate
+        "ai_missed_as_human_rate": float(
+            np.sum(
+                (
+                    selective == 0
+                )
+                & (
+                    y_true == 1
+                )
+            )
+            / ai_total
         ),
     }
 
@@ -922,14 +1138,26 @@ def source_metrics(
     frame: pd.DataFrame,
     probabilities: np.ndarray,
 ) -> dict:
-    result = {}
+    result: dict[
+        str,
+        dict,
+    ] = {}
 
-    for source in sorted(
-        frame["source"].unique()
-    ):
+    source_values = (
+        frame["source"]
+        .astype(str)
+        .to_numpy()
+    )
+
+    sources = sorted(
+        frame["source"]
+        .astype(str)
+        .unique()
+    )
+
+    for source in sources:
         mask = (
-            frame["source"]
-            .to_numpy()
+            source_values
             == source
         )
 
@@ -939,7 +1167,7 @@ def source_metrics(
                 "label",
             ]
             .to_numpy(
-                dtype=int
+                dtype=np.int64
             )
         )
 
@@ -953,7 +1181,9 @@ def source_metrics(
         predicted = (
             scores
             >= 0.5
-        ).astype(int)
+        ).astype(
+            np.int64
+        )
 
         item = {
             "samples": int(
@@ -987,12 +1217,14 @@ def source_metrics(
                 )
             )
 
-        result[source] = item
+        result[
+            source
+        ] = item
 
     return result
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -1034,13 +1266,21 @@ def main():
         arguments.extra_csv
     )
 
-    dataframe = pd.concat(
-        [
+    frames = [
+        frame
+        for frame in (
             primary,
             augmentation,
             extras,
-        ],
-        ignore_index=True,
+        )
+        if not frame.empty
+    ]
+
+    dataframe = clean_dataframe(
+        pd.concat(
+            frames,
+            ignore_index=True,
+        )
     )
 
     conflicts = (
@@ -1059,10 +1299,12 @@ def main():
 
     if conflicting_texts:
         dataframe = dataframe[
-            ~dataframe["text"].isin(
+            ~dataframe[
+                "text"
+            ].isin(
                 conflicting_texts
             )
-        ]
+        ].copy()
 
     dataframe = (
         dataframe
@@ -1078,6 +1320,40 @@ def main():
         )
     )
 
+    dataframe["label"] = (
+        pd.to_numeric(
+            dataframe["label"],
+            errors="raise",
+        )
+        .astype(
+            "int64"
+        )
+    )
+
+    dataframe[
+        "word_count"
+    ] = (
+        pd.to_numeric(
+            dataframe[
+                "word_count"
+            ],
+            errors="raise",
+        )
+        .astype(
+            "int64"
+        )
+    )
+
+    dataframe["text"] = (
+        dataframe["text"]
+        .astype(str)
+    )
+
+    dataframe["source"] = (
+        dataframe["source"]
+        .astype(str)
+    )
+
     if len(dataframe) < 1000:
         raise ValueError(
             "Dataset terlalu kecil untuk versi detector ini."
@@ -1086,6 +1362,7 @@ def main():
     class_counts = (
         dataframe["label"]
         .value_counts()
+        .sort_index()
         .to_dict()
     )
 
@@ -1103,13 +1380,47 @@ def main():
             "Masing-masing kelas harus memiliki setidaknya 400 sampel."
         )
 
+    print(
+        f"Total data: {len(dataframe)}"
+    )
+
+    print(
+        f"Distribusi label: {class_counts}"
+    )
+
+    print(
+        "Tipe label: "
+        f"{dataframe['label'].dtype}"
+    )
+
+    print(
+        "Sumber data:"
+    )
+
+    source_counts = (
+        dataframe["source"]
+        .value_counts()
+        .to_dict()
+    )
+
+    for (
+        source,
+        count,
+    ) in source_counts.items():
+        print(
+            f"- {source}: {count}"
+        )
+
     train_frame, temp_frame = (
         train_test_split(
             dataframe,
             test_size=0.40,
-            stratify=dataframe[
-                "label"
-            ],
+            stratify=(
+                dataframe["label"]
+                .to_numpy(
+                    dtype=np.int64
+                )
+            ),
             random_state=RANDOM_STATE,
         )
     )
@@ -1120,16 +1431,68 @@ def main():
     ) = train_test_split(
         temp_frame,
         test_size=0.50,
-        stratify=temp_frame[
-            "label"
-        ],
+        stratify=(
+            temp_frame["label"]
+            .to_numpy(
+                dtype=np.int64
+            )
+        ),
         random_state=RANDOM_STATE,
     )
 
+    train_texts = (
+        train_frame["text"]
+        .astype(str)
+        .tolist()
+    )
+
+    calibration_texts = (
+        calibration_frame[
+            "text"
+        ]
+        .astype(str)
+        .tolist()
+    )
+
+    test_texts = (
+        test_frame["text"]
+        .astype(str)
+        .tolist()
+    )
+
+    y_train = (
+        train_frame["label"]
+        .to_numpy(
+            dtype=np.int64
+        )
+    )
+
+    y_calibration = (
+        calibration_frame[
+            "label"
+        ]
+        .to_numpy(
+            dtype=np.int64
+        )
+    )
+
+    y_test = (
+        test_frame["label"]
+        .to_numpy(
+            dtype=np.int64
+        )
+    )
+
     models = {
-        "word": build_word_model(),
-        "char": build_char_model(),
-        "style": build_style_model(),
+        "word": (
+            build_word_model()
+        ),
+        "char": (
+            build_char_model()
+        ),
+        "style": (
+            build_style_model()
+        ),
     }
 
     print(
@@ -1137,8 +1500,8 @@ def main():
     )
 
     models["word"].fit(
-        train_frame["text"],
-        train_frame["label"],
+        train_texts,
+        y_train,
     )
 
     print(
@@ -1146,8 +1509,8 @@ def main():
     )
 
     models["char"].fit(
-        train_frame["text"],
-        train_frame["label"],
+        train_texts,
+        y_train,
     )
 
     print(
@@ -1156,35 +1519,33 @@ def main():
 
     models["style"].fit(
         stylometry_matrix(
-            train_frame["text"]
+            train_texts
         ),
-        train_frame["label"],
+        y_train,
     )
 
     calibration_components = (
         component_probabilities(
             models,
-            calibration_frame[
-                "text"
-            ],
+            calibration_texts,
         )
     )
 
-    meta_model = LogisticRegression(
-        C=1.0,
-        max_iter=3000,
-        class_weight="balanced",
-        solver="liblinear",
-        random_state=RANDOM_STATE,
+    meta_model = (
+        LogisticRegression(
+            C=1.0,
+            max_iter=3000,
+            class_weight="balanced",
+            solver="liblinear",
+            random_state=RANDOM_STATE,
+        )
     )
 
     meta_model.fit(
         meta_score_features(
             calibration_components
         ),
-        calibration_frame[
-            "label"
-        ],
+        y_calibration,
     )
 
     calibration_probabilities = (
@@ -1194,15 +1555,6 @@ def main():
                 calibration_components
             )
         )[:, 1]
-    )
-
-    y_calibration = (
-        calibration_frame[
-            "label"
-        ]
-        .to_numpy(
-            dtype=int
-        )
     )
 
     (
@@ -1216,7 +1568,7 @@ def main():
     test_components = (
         component_probabilities(
             models,
-            test_frame["text"],
+            test_texts,
         )
     )
 
@@ -1229,20 +1581,18 @@ def main():
         )[:, 1]
     )
 
-    y_test = (
-        test_frame[
-            "label"
-        ]
-        .to_numpy(
-            dtype=int
-        )
-    )
-
     metrics = evaluate(
         y_test,
         test_probabilities,
         human_threshold=human_threshold,
         ai_threshold=ai_threshold,
+    )
+
+    all_labels = (
+        dataframe["label"]
+        .to_numpy(
+            dtype=np.int64
+        )
     )
 
     metadata = {
@@ -1252,7 +1602,7 @@ def main():
         "model_name": (
             "DeteksiAI Hybrid ID"
         ),
-        "model_version": "2.0",
+        "model_version": "2.1",
         "trained_at": (
             datetime.now(
                 timezone.utc
@@ -1283,32 +1633,21 @@ def main():
             ),
             "human": int(
                 np.sum(
-                    dataframe[
-                        "label"
-                    ]
-                    == 0
+                    all_labels == 0
                 )
             ),
             "ai": int(
                 np.sum(
-                    dataframe[
-                        "label"
-                    ]
-                    == 1
+                    all_labels == 1
                 )
             ),
         },
         "sources": {
-            key: int(value)
-            for key, value
-            in (
-                dataframe[
-                    "source"
-                ]
-                .value_counts()
-                .to_dict()
-                .items()
-            )
+            str(key): int(value)
+            for (
+                key,
+                value,
+            ) in source_counts.items()
         },
         "evaluation": metrics,
         "test_source_breakdown": (
