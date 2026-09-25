@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DeteksiAI Indonesia</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero">
+        <div>
+          <span class="eyebrow"> AI TEXT SCREENING </span>
+
+          <h1>DeteksiAI Indonesia</h1>
+
+          <p>
+            Analisis indikasi teks buatan AI pada dokumen berbahasa Indonesia
+            dengan skor per bagian dan tingkat keyakinan.
+          </p>
+        </div>
+
+        <div class="notice">
+          Hasil detector adalah estimasi statistik, bukan bukti absolut tentang
+          penulis.
+        </div>
+      </section>
+
+      <section class="panel input-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Periksa dokumen</h2>
+
+            <p>Tempel teks atau unggah TXT, MD, DOCX, dan PDF berbasis teks.</p>
+          </div>
+
+          <span id="counter"> 0 kata </span>
+        </div>
+
+        <textarea
+          id="textInput"
+          placeholder="Tempel teks yang ingin dianalisis di sini..."
+        ></textarea>
+
+        <div class="controls">
+          <label class="file-picker">
+            <input id="fileInput" type="file" accept=".txt,.md,.docx,.pdf" />
+
+            <span> Pilih dokumen </span>
+          </label>
+
+          <span id="fileName" class="file-name"> Belum ada file </span>
+
+          <button id="analyzeButton" type="button">Analisis teks</button>
+        </div>
+
+        <p id="errorBox" class="error hidden"></p>
+      </section>
+
+      <section id="resultSection" class="results hidden">
+        <div class="summary-grid">
+          <article class="panel score-card">
+            <span class="card-label"> AI score </span>
+
+            <strong id="aiScore"> 0% </strong>
+
+            <div class="meter">
+              <div id="meterFill"></div>
+            </div>
+
+            <p id="verdict">-</p>
+          </article>
+
+          <article class="panel metric-card">
+            <span class="card-label"> Human score </span>
+
+            <strong id="humanScore"> 0% </strong>
+
+            <p>Komplemen dari AI score model.</p>
+          </article>
+
+          <article class="panel metric-card">
+            <span class="card-label"> Reliabilitas input </span>
+
+            <strong id="reliability"> - </strong>
+
+            <p id="documentStats">-</p>
+          </article>
+        </div>
+
+        <article id="warningPanel" class="panel warning-panel hidden">
+          <h3>Catatan analisis</h3>
+
+          <ul id="warningList"></ul>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Analisis per bagian</h2>
+
+              <p>
+                Dokumen dipecah menjadi potongan agar perubahan gaya di dalam
+                teks lebih mudah terlihat.
+              </p>
+            </div>
+          </div>
+
+          <div id="sectionsList" class="sections-list"></div>
+        </article>
+
+        <article class="panel model-panel">
+          <h3>Informasi model</h3>
+
+          <p id="modelInfo">-</p>
+
+          <p class="fine-print">
+            Nilai evaluasi hanya berlaku pada data uji model saat pelatihan dan
+            tidak menjamin performa yang sama pada semua jenis dokumen atau
+            model AI baru.
+          </p>
+        </article>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
