@@ -3,125 +3,335 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DeteksiAI Indonesia</title>
+    <meta
+      name="description"
+      content="AI Detector Bahasa Indonesia untuk memeriksa indikasi teks buatan AI pada dokumen."
+    />
+    <title>AI Detector Indonesia</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
+
   <body>
-    <main class="page-shell">
-      <section class="hero">
-        <div>
-          <span class="eyebrow"> AI TEXT SCREENING </span>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="AI Detector Indonesia">
+          <span class="brand-mark">AD</span>
 
-          <h1>DeteksiAI Indonesia</h1>
+          <span>
+            <strong>AI Detector</strong>
+            <small>Bahasa Indonesia</small>
+          </span>
+        </a>
 
-          <p>
-            Analisis indikasi teks buatan AI pada dokumen berbahasa Indonesia
-            dengan skor per bagian dan tingkat keyakinan.
+        <span class="topbar-note">Pemeriksaan teks lokal</span>
+      </header>
+
+      <main>
+        <section class="intro">
+          <p class="kicker">Pemeriksaan dokumen</p>
+
+          <h1>Cek apakah sebuah teks menunjukkan pola tulisan AI.</h1>
+
+          <p class="intro-copy">
+            Tempel teks atau unggah dokumen. Model membandingkan pola kata,
+            karakter, dan gaya penulisan lalu menandai bagian yang paling perlu
+            diperiksa.
           </p>
-        </div>
+        </section>
 
-        <div class="notice">
-          Hasil detector adalah estimasi statistik, bukan bukti absolut tentang
-          penulis.
-        </div>
-      </section>
+        <section class="workspace">
+          <article class="input-card">
+            <div class="card-head">
+              <div>
+                <h2>Teks yang diperiksa</h2>
 
-      <section class="panel input-panel">
-        <div class="panel-heading">
-          <div>
-            <h2>Periksa dokumen</h2>
+                <p>Minimal 40 kata. TXT, MD, DOCX, dan PDF berbasis teks.</p>
+              </div>
 
-            <p>Tempel teks atau unggah TXT, MD, DOCX, dan PDF berbasis teks.</p>
-          </div>
-
-          <span id="counter"> 0 kata </span>
-        </div>
-
-        <textarea
-          id="textInput"
-          placeholder="Tempel teks yang ingin dianalisis di sini..."
-        ></textarea>
-
-        <div class="controls">
-          <label class="file-picker">
-            <input id="fileInput" type="file" accept=".txt,.md,.docx,.pdf" />
-
-            <span> Pilih dokumen </span>
-          </label>
-
-          <span id="fileName" class="file-name"> Belum ada file </span>
-
-          <button id="analyzeButton" type="button">Analisis teks</button>
-        </div>
-
-        <p id="errorBox" class="error hidden"></p>
-      </section>
-
-      <section id="resultSection" class="results hidden">
-        <div class="summary-grid">
-          <article class="panel score-card">
-            <span class="card-label"> AI score </span>
-
-            <strong id="aiScore"> 0% </strong>
-
-            <div class="meter">
-              <div id="meterFill"></div>
+              <span id="counter" class="counter">0 kata</span>
             </div>
 
-            <p id="verdict">-</p>
+            <textarea
+              id="textInput"
+              spellcheck="false"
+              placeholder="Tempel isi dokumen di sini..."
+            ></textarea>
+
+            <div class="input-actions">
+              <label class="file-button" for="fileInput">
+                Pilih dokumen
+
+                <input
+                  id="fileInput"
+                  type="file"
+                  accept=".txt,.md,.docx,.pdf"
+                />
+              </label>
+
+              <span id="fileName" class="file-name"> Belum ada file </span>
+
+              <button
+                id="clearButton"
+                class="button button-secondary"
+                type="button"
+              >
+                Bersihkan
+              </button>
+
+              <button
+                id="analyzeButton"
+                class="button button-primary"
+                type="button"
+              >
+                Periksa teks
+              </button>
+            </div>
+
+            <p id="errorBox" class="error-box hidden"></p>
           </article>
 
-          <article class="panel metric-card">
-            <span class="card-label"> Human score </span>
+          <aside class="guide-card">
+            <h2>Cara membaca hasil</h2>
 
-            <strong id="humanScore"> 0% </strong>
+            <dl>
+              <div>
+                <dt>Indeks AI</dt>
 
-            <p>Komplemen dari AI score model.</p>
+                <dd>Skor model 0–100. Ini bukan persentase kepastian.</dd>
+              </div>
+
+              <div>
+                <dt>Kesepakatan model</dt>
+
+                <dd>Seberapa dekat hasil tiga jenis pemeriksaan.</dd>
+              </div>
+
+              <div>
+                <dt>Belum cukup bukti</dt>
+
+                <dd>
+                  Dipakai saat skor berada di area abu-abu atau bagian dokumen
+                  saling bertentangan.
+                </dd>
+              </div>
+            </dl>
+          </aside>
+        </section>
+
+        <section
+          id="resultSection"
+          class="result-section hidden"
+          aria-live="polite"
+        >
+          <article class="result-main">
+            <div class="result-title-row">
+              <div>
+                <p class="kicker">Hasil pemeriksaan</p>
+
+                <div class="verdict-row">
+                  <span id="verdictBadge" class="verdict-badge uncertain">
+                    Belum cukup bukti
+                  </span>
+
+                  <span id="confidenceText" class="confidence-text">
+                    Keyakinan rendah
+                  </span>
+                </div>
+
+                <h2 id="resultTitle">Hasil belum tersedia</h2>
+
+                <p id="resultSummary" class="result-summary"></p>
+              </div>
+
+              <div id="scoreRing" class="score-ring" style="--score: 0">
+                <div>
+                  <strong id="aiIndex">0</strong>
+                  <span>Indeks AI</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-stats">
+              <div>
+                <span>Kesepakatan model</span>
+                <strong id="modelAgreement">0%</strong>
+              </div>
+
+              <div>
+                <span>Konsistensi bagian</span>
+                <strong id="sectionConsistency">0%</strong>
+              </div>
+
+              <div>
+                <span>Panjang teks</span>
+                <strong id="wordCount">0 kata</strong>
+              </div>
+
+              <div>
+                <span>Jumlah bagian</span>
+                <strong id="sectionCount">0</strong>
+              </div>
+            </div>
           </article>
 
-          <article class="panel metric-card">
-            <span class="card-label"> Reliabilitas input </span>
+          <div class="result-grid">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Hasil per pemeriksaan</h3>
 
-            <strong id="reliability"> - </strong>
+                  <p>Tiga model membaca teks dari sisi yang berbeda.</p>
+                </div>
+              </div>
 
-            <p id="documentStats">-</p>
+              <div class="component-list">
+                <div class="component-row">
+                  <div class="component-label">
+                    <strong>Pola kata</strong>
+                    <span>Susunan kata dan frasa</span>
+                  </div>
+
+                  <div class="component-meter">
+                    <span id="wordBar"></span>
+                  </div>
+
+                  <strong id="wordScore">0</strong>
+                </div>
+
+                <div class="component-row">
+                  <div class="component-label">
+                    <strong>Pola karakter</strong>
+                    <span>Kombinasi karakter dan tanda baca</span>
+                  </div>
+
+                  <div class="component-meter">
+                    <span id="charBar"></span>
+                  </div>
+
+                  <strong id="charScore">0</strong>
+                </div>
+
+                <div class="component-row">
+                  <div class="component-label">
+                    <strong>Gaya tulis</strong>
+
+                    <span> Panjang kalimat, variasi, dan pengulangan </span>
+                  </div>
+
+                  <div class="component-meter">
+                    <span id="styleBar"></span>
+                  </div>
+
+                  <strong id="styleScore">0</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Ringkasan bagian</h3>
+
+                  <p>Jumlah bagian berdasarkan ambang keputusan model.</p>
+                </div>
+              </div>
+
+              <div class="section-counts">
+                <div class="count-box ai">
+                  <span>Indikasi AI</span>
+                  <strong id="aiSectionCount">0</strong>
+                </div>
+
+                <div class="count-box uncertain">
+                  <span>Belum pasti</span>
+                  <strong id="uncertainSectionCount">0</strong>
+                </div>
+
+                <div class="count-box human">
+                  <span>Cenderung manusia</span>
+                  <strong id="humanSectionCount">0</strong>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <article id="notesPanel" class="panel hidden">
+            <div class="panel-head">
+              <div>
+                <h3>Catatan</h3>
+
+                <p>Hal yang perlu diperhatikan sebelum mengambil kesimpulan.</p>
+              </div>
+            </div>
+
+            <ul id="notesList" class="notes-list"></ul>
           </article>
-        </div>
 
-        <article id="warningPanel" class="panel warning-panel hidden">
-          <h3>Catatan analisis</h3>
+          <article class="panel">
+            <div class="panel-head panel-head-inline">
+              <div>
+                <h3>Bagian dokumen</h3>
 
-          <ul id="warningList"></ul>
-        </article>
+                <p>
+                  Lihat skor tiap bagian untuk menemukan perubahan pola di dalam
+                  teks.
+                </p>
+              </div>
 
-        <article class="panel">
-          <div class="panel-heading">
-            <div>
-              <h2>Analisis per bagian</h2>
+              <span id="thresholdInfo" class="threshold-info"></span>
+            </div>
 
-              <p>
-                Dokumen dipecah menjadi potongan agar perubahan gaya di dalam
-                teks lebih mudah terlihat.
+            <div id="sectionsList" class="sections-list"></div>
+          </article>
+
+          <details class="model-details">
+            <summary>Detail model dan evaluasi</summary>
+
+            <div class="model-details-body">
+              <div class="detail-grid">
+                <div>
+                  <span>Model</span>
+                  <strong id="modelName">-</strong>
+                </div>
+
+                <div>
+                  <span>Versi</span>
+                  <strong id="modelVersion">-</strong>
+                </div>
+
+                <div>
+                  <span>Akurasi selektif</span>
+                  <strong id="selectiveAccuracy">-</strong>
+                </div>
+
+                <div>
+                  <span>Cakupan keputusan</span>
+                  <strong id="selectiveCoverage">-</strong>
+                </div>
+
+                <div>
+                  <span>False positive AI</span>
+                  <strong id="falsePositiveRate">-</strong>
+                </div>
+
+                <div>
+                  <span>Data uji</span>
+                  <strong id="testSamples">-</strong>
+                </div>
+              </div>
+
+              <p id="sourceInfo" class="source-info"></p>
+
+              <p class="disclaimer">
+                Hasil ini membantu pemeriksaan, bukan bukti kepengarangan. Teks
+                manusia dapat terlihat seperti AI dan teks AI yang diedit dapat
+                lolos dari detector.
               </p>
             </div>
-          </div>
-
-          <div id="sectionsList" class="sections-list"></div>
-        </article>
-
-        <article class="panel model-panel">
-          <h3>Informasi model</h3>
-
-          <p id="modelInfo">-</p>
-
-          <p class="fine-print">
-            Nilai evaluasi hanya berlaku pada data uji model saat pelatihan dan
-            tidak menjamin performa yang sama pada semua jenis dokumen atau
-            model AI baru.
-          </p>
-        </article>
-      </section>
-    </main>
+          </details>
+        </section>
+      </main>
+    </div>
 
     <script src="/static/app.js"></script>
   </body>
