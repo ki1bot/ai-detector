@@ -53,14 +53,50 @@ function sectionPresentation(section) {
   };
 }
 
+function splitIntoSentences(text) {
+  const value = String(text || "").trim();
+
+  if (!value) {
+    return [];
+  }
+
+  const matches = value.match(/[^.!?\n]+(?:[.!?]+|$)/g);
+
+  if (!matches) {
+    return [value];
+  }
+
+  return matches.map((sentence) => sentence.trim()).filter(Boolean);
+}
+
+function createHighlightedText(text, key) {
+  const container = document.createElement("div");
+
+  container.className = "highlighted-text";
+
+  const sentences = splitIntoSentences(text);
+
+  sentences.forEach((sentence) => {
+    const sentenceElement = document.createElement("span");
+
+    sentenceElement.className = `text-highlight ${key}`;
+    sentenceElement.textContent = sentence;
+
+    container.appendChild(sentenceElement);
+  });
+
+  return container;
+}
+
 function createMarkedBlock(section) {
   const presentation = sectionPresentation(section);
   const details = document.createElement("details");
 
   details.className = `marked-block ${presentation.key}`;
-  details.open = section.index <= 2;
+  details.open = true;
 
   const summary = document.createElement("summary");
+
   const meta = document.createElement("div");
 
   meta.className = "marked-meta";
@@ -82,7 +118,7 @@ function createMarkedBlock(section) {
 
   const score = document.createElement("span");
 
-  score.className = "marked-score";
+  score.className = `marked-score ${presentation.key}`;
   score.textContent = `Indeks AI ${section.score}/100`;
 
   summary.append(meta, score);
@@ -91,10 +127,7 @@ function createMarkedBlock(section) {
 
   body.className = "marked-body";
 
-  const text = document.createElement("p");
-
-  text.className = "marked-text";
-  text.textContent = section.text;
+  const textWrapper = createHighlightedText(section.text, presentation.key);
 
   const components = document.createElement("div");
 
@@ -114,7 +147,8 @@ function createMarkedBlock(section) {
     components.appendChild(item);
   });
 
-  body.append(text, components);
+  body.append(textWrapper, components);
+
   details.append(summary, body);
 
   return details;
@@ -132,6 +166,7 @@ function renderMarkedText(sections) {
 
 function renderNotes(notes) {
   const panel = document.getElementById("notesPanel");
+
   const list = document.getElementById("notesList");
 
   list.innerHTML = "";
@@ -155,10 +190,15 @@ function renderNotes(notes) {
 
 function renderModelInfo(model) {
   setText("modelName", model.name || "-");
+
   setText("modelVersion", model.version || "-");
+
   setText("selectiveAccuracy", formatPercent(model.selective_accuracy));
+
   setText("selectiveCoverage", formatPercent(model.selective_coverage));
+
   setText("falsePositiveRate", formatPercent(model.ai_false_positive_rate));
+
   setText("balancedAccuracy", formatPercent(model.balanced_accuracy));
 
   setText(
@@ -169,6 +209,7 @@ function renderModelInfo(model) {
   setText("testSamples", model.test_samples ?? "-");
 
   const sources = model.sources || {};
+
   const sourceEntries = Object.entries(sources);
 
   const sourceText = sourceEntries.length
@@ -180,14 +221,19 @@ function renderModelInfo(model) {
 
 export function renderResult(data) {
   const presentation = overallPresentation(data);
+
   const badge = document.getElementById("verdictBadge");
+
   const resultMain = document.getElementById("resultMain");
+
   const scoreBox = document.getElementById("scoreBox");
 
   badge.className = `verdict-badge ${presentation.key}`;
+
   badge.textContent = presentation.badge;
 
   resultMain.className = `card result-main ${presentation.key}`;
+
   scoreBox.className = `score-box ${presentation.key}`;
 
   setText(
@@ -196,23 +242,35 @@ export function renderResult(data) {
   );
 
   setText("resultTitle", presentation.title);
+
   setText("resultSummary", data.summary);
+
   setText("aiIndex", data.ai_index);
+
   setText("modelAgreement", `${data.model_agreement}%`);
+
   setText("sectionConsistency", `${data.section_consistency}%`);
+
   setText("wordCount", `${data.word_count} kata`);
+
   setText("sectionCount", data.section_count);
 
   setText("wordScore", data.components.word);
+
   setText("charScore", data.components.char);
+
   setText("styleScore", data.components.style);
 
   setBar("wordBar", data.components.word);
+
   setBar("charBar", data.components.char);
+
   setBar("styleBar", data.components.style);
 
   setText("aiSectionCount", data.section_summary.ai);
+
   setText("uncertainSectionCount", data.section_summary.uncertain);
+
   setText("humanSectionCount", data.section_summary.human);
 
   setText(
@@ -221,7 +279,9 @@ export function renderResult(data) {
   );
 
   renderMarkedText(data.sections || []);
+
   renderNotes(data.notes);
+
   renderModelInfo(data.model || {});
 
   elements.resultSection.classList.remove("hidden");

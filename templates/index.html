@@ -8,24 +8,28 @@
       content="AI Detector Bahasa Indonesia untuk memeriksa indikasi teks buatan AI pada dokumen."
     />
     <title>AI Detector Indonesia</title>
+
     <link rel="stylesheet" href="/static/css/base.css" />
     <link rel="stylesheet" href="/static/css/layout.css" />
     <link rel="stylesheet" href="/static/css/forms.css" />
     <link rel="stylesheet" href="/static/css/results.css" />
     <link rel="stylesheet" href="/static/css/responsive.css" />
   </head>
+
   <body>
     <div class="site-shell">
       <header class="topbar">
         <a class="brand" href="/" aria-label="AI Detector Indonesia">
-          <span class="brand-mark">AD</span>
+          <span class="brand-mark"> AD </span>
+
           <span class="brand-copy">
-            <strong>AI Detector</strong>
-            <small>Bahasa Indonesia</small>
+            <strong> AI Detector </strong>
+
+            <small> Bahasa Indonesia </small>
           </span>
         </a>
 
-        <span class="topbar-note">Analisis teks lokal</span>
+        <span class="topbar-note"> Analisis teks lokal </span>
       </header>
 
       <main>
@@ -35,10 +39,10 @@
           <h1>Periksa pola tulisan AI tanpa tampilan yang membingungkan.</h1>
 
           <p class="intro-copy">
-            Tempel teks atau unggah dokumen. Hasil dibagi menjadi tiga penanda:
-            merah untuk indikasi AI, kuning untuk bagian campuran atau belum
-            pasti, dan hijau untuk bagian yang lebih konsisten dengan tulisan
-            manusia.
+            Tempel teks atau unggah dokumen. Setiap teks hasil pemeriksaan akan
+            diberi penanda warna secara langsung: merah untuk indikasi AI,
+            kuning untuk bagian campuran atau belum pasti, dan hijau untuk
+            bagian yang lebih konsisten dengan tulisan manusia.
           </p>
         </section>
 
@@ -47,13 +51,14 @@
             <div class="card-head">
               <div>
                 <h2>Teks yang diperiksa</h2>
+
                 <p>
                   Minimal 50 kata. Mendukung TXT, MD, DOCX, dan PDF berbasis
                   teks.
                 </p>
               </div>
 
-              <span id="counter" class="counter">0 kata</span>
+              <span id="counter" class="counter"> 0 kata </span>
             </div>
 
             <textarea
@@ -65,6 +70,7 @@
             <div class="input-actions">
               <label class="file-button" for="fileInput">
                 Pilih dokumen
+
                 <input
                   id="fileInput"
                   type="file"
@@ -72,7 +78,7 @@
                 />
               </label>
 
-              <span id="fileName" class="file-name">Belum ada file</span>
+              <span id="fileName" class="file-name"> Belum ada file </span>
 
               <div class="action-buttons">
                 <button
@@ -100,7 +106,8 @@
             <div class="card-head compact">
               <div>
                 <h2>Arti penanda</h2>
-                <p>Warna menunjukkan hasil model pada bagian teks.</p>
+
+                <p>Warna langsung ditempatkan pada teks hasil pemeriksaan.</p>
               </div>
             </div>
 
@@ -109,8 +116,9 @@
                 <span class="legend-dot"></span>
 
                 <div>
-                  <strong>Merah</strong>
-                  <p>Warning. Bagian memiliki indikasi AI yang kuat.</p>
+                  <strong> Merah </strong>
+
+                  <p>Warning. Teks memiliki indikasi AI yang kuat.</p>
                 </div>
               </div>
 
@@ -118,8 +126,9 @@
                 <span class="legend-dot"></span>
 
                 <div>
-                  <strong>Kuning</strong>
-                  <p>Campuran atau belum pasti. Bagian perlu ditinjau lagi.</p>
+                  <strong> Kuning </strong>
+
+                  <p>Teks campuran atau model belum cukup yakin.</p>
                 </div>
               </div>
 
@@ -127,15 +136,16 @@
                 <span class="legend-dot"></span>
 
                 <div>
-                  <strong>Hijau</strong>
-                  <p>Bagian lebih konsisten dengan pola tulisan manusia.</p>
+                  <strong> Hijau </strong>
+
+                  <p>Teks lebih konsisten dengan pola tulisan manusia.</p>
                 </div>
               </div>
             </div>
 
             <p class="legend-note">
-              Warna adalah hasil klasifikasi model, bukan bukti mutlak siapa
-              yang menulis teks.
+              Penanda warna merupakan hasil klasifikasi model dan bukan bukti
+              mutlak siapa yang menulis teks.
             </p>
           </aside>
         </section>
@@ -166,31 +176,37 @@
               </div>
 
               <div id="scoreBox" class="score-box uncertain">
-                <span>Indeks AI</span>
-                <strong id="aiIndex">0</strong>
-                <small>0–100</small>
+                <span> Indeks AI </span>
+
+                <strong id="aiIndex"> 0 </strong>
+
+                <small> 0–100 </small>
               </div>
             </div>
 
             <div class="result-stats">
               <div>
-                <span>Kesepakatan model</span>
-                <strong id="modelAgreement">0%</strong>
+                <span> Kesepakatan model </span>
+
+                <strong id="modelAgreement"> 0% </strong>
               </div>
 
               <div>
-                <span>Konsistensi bagian</span>
-                <strong id="sectionConsistency">0%</strong>
+                <span> Konsistensi bagian </span>
+
+                <strong id="sectionConsistency"> 0% </strong>
               </div>
 
               <div>
-                <span>Panjang teks</span>
-                <strong id="wordCount">0 kata</strong>
+                <span> Panjang teks </span>
+
+                <strong id="wordCount"> 0 kata </strong>
               </div>
 
               <div>
-                <span>Jumlah bagian</span>
-                <strong id="sectionCount">0</strong>
+                <span> Jumlah bagian </span>
+
+                <strong id="sectionCount"> 0 </strong>
               </div>
             </div>
           </article>
@@ -201,8 +217,8 @@
                 <h3>Teks yang ditandai</h3>
 
                 <p>
-                  Setiap bagian diberi warna sesuai hasil pemeriksaan. Klik
-                  bagian untuk melihat skor pola kata, karakter, dan gaya tulis.
+                  Warna diberikan langsung pada setiap teks berdasarkan hasil
+                  pemeriksaan model.
                 </p>
               </div>
 
@@ -234,6 +250,7 @@
               <div class="panel-head">
                 <div>
                   <h3>Dasar pemeriksaan</h3>
+
                   <p>Tiga model membaca teks dari sisi yang berbeda.</p>
                 </div>
               </div>
@@ -241,41 +258,44 @@
               <div class="component-list">
                 <div class="component-row">
                   <div class="component-label">
-                    <strong>Pola kata</strong>
-                    <span>Susunan kata dan frasa</span>
+                    <strong> Pola kata </strong>
+
+                    <span> Susunan kata dan frasa </span>
                   </div>
 
                   <div class="component-meter">
                     <span id="wordBar"></span>
                   </div>
 
-                  <strong id="wordScore">0</strong>
+                  <strong id="wordScore"> 0 </strong>
                 </div>
 
                 <div class="component-row">
                   <div class="component-label">
-                    <strong>Pola karakter</strong>
-                    <span>Kombinasi karakter dan tanda baca</span>
+                    <strong> Pola karakter </strong>
+
+                    <span> Kombinasi karakter dan tanda baca </span>
                   </div>
 
                   <div class="component-meter">
                     <span id="charBar"></span>
                   </div>
 
-                  <strong id="charScore">0</strong>
+                  <strong id="charScore"> 0 </strong>
                 </div>
 
                 <div class="component-row">
                   <div class="component-label">
-                    <strong>Gaya tulis</strong>
-                    <span>Panjang kalimat, variasi, dan pengulangan</span>
+                    <strong> Gaya tulis </strong>
+
+                    <span> Panjang kalimat, variasi, dan pengulangan </span>
                   </div>
 
                   <div class="component-meter">
                     <span id="styleBar"></span>
                   </div>
 
-                  <strong id="styleScore">0</strong>
+                  <strong id="styleScore"> 0 </strong>
                 </div>
               </div>
             </article>
@@ -284,24 +304,28 @@
               <div class="panel-head">
                 <div>
                   <h3>Ringkasan penanda</h3>
+
                   <p>Jumlah bagian untuk masing-masing hasil.</p>
                 </div>
               </div>
 
               <div class="section-counts">
                 <div class="count-box ai">
-                  <span>AI</span>
-                  <strong id="aiSectionCount">0</strong>
+                  <span> AI </span>
+
+                  <strong id="aiSectionCount"> 0 </strong>
                 </div>
 
                 <div class="count-box uncertain">
-                  <span>Campuran</span>
-                  <strong id="uncertainSectionCount">0</strong>
+                  <span> Campuran </span>
+
+                  <strong id="uncertainSectionCount"> 0 </strong>
                 </div>
 
                 <div class="count-box human">
-                  <span>Manusia</span>
-                  <strong id="humanSectionCount">0</strong>
+                  <span> Manusia </span>
+
+                  <strong id="humanSectionCount"> 0 </strong>
                 </div>
               </div>
             </article>
@@ -311,6 +335,7 @@
             <div class="panel-head">
               <div>
                 <h3>Catatan pemeriksaan</h3>
+
                 <p>
                   Hal yang perlu dipertimbangkan sebelum mengambil kesimpulan.
                 </p>
@@ -326,43 +351,51 @@
             <div class="model-details-body">
               <div class="detail-grid">
                 <div>
-                  <span>Model</span>
-                  <strong id="modelName">-</strong>
+                  <span> Model </span>
+
+                  <strong id="modelName"> - </strong>
                 </div>
 
                 <div>
-                  <span>Versi</span>
-                  <strong id="modelVersion">-</strong>
+                  <span> Versi </span>
+
+                  <strong id="modelVersion"> - </strong>
                 </div>
 
                 <div>
-                  <span>Akurasi selektif</span>
-                  <strong id="selectiveAccuracy">-</strong>
+                  <span> Akurasi selektif </span>
+
+                  <strong id="selectiveAccuracy"> - </strong>
                 </div>
 
                 <div>
-                  <span>Cakupan keputusan</span>
-                  <strong id="selectiveCoverage">-</strong>
+                  <span> Cakupan keputusan </span>
+
+                  <strong id="selectiveCoverage"> - </strong>
                 </div>
 
                 <div>
-                  <span>False positive AI</span>
-                  <strong id="falsePositiveRate">-</strong>
+                  <span> False positive AI </span>
+
+                  <strong id="falsePositiveRate"> - </strong>
                 </div>
 
                 <div>
-                  <span>Balanced accuracy</span>
-                  <strong id="balancedAccuracy">-</strong>
+                  <span> Balanced accuracy </span>
+
+                  <strong id="balancedAccuracy"> - </strong>
                 </div>
 
                 <div>
-                  <span>ROC-AUC</span>
-                  <strong id="rocAuc">-</strong>
+                  <span> ROC-AUC </span>
+
+                  <strong id="rocAuc"> - </strong>
                 </div>
 
                 <div>
-                  <span>Data uji</span>
-                  <strong id="testSamples">-</strong>
+                  <span> Data uji </span>
+
+                  <strong id="testSamples"> - </strong>
                 </div>
               </div>
 

@@ -56,22 +56,22 @@
 
 .verdict-badge.ai,
 .mini-badge.ai {
-  border-color: rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.11);
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.13);
   color: #fca5a5;
 }
 
 .verdict-badge.uncertain,
 .mini-badge.uncertain {
-  border-color: rgba(245, 158, 11, 0.35);
-  background: rgba(245, 158, 11, 0.11);
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.13);
   color: #fcd34d;
 }
 
 .verdict-badge.human,
 .mini-badge.human {
-  border-color: rgba(34, 197, 94, 0.35);
-  background: rgba(34, 197, 94, 0.11);
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.13);
   color: #86efac;
 }
 
@@ -182,7 +182,7 @@
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
   color: #8e929a;
   font-size: 10px;
 }
@@ -194,8 +194,8 @@
 }
 
 .inline-legend i {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   display: inline-block;
   border-radius: 50%;
 }
@@ -214,30 +214,26 @@
 
 .marked-text-list {
   display: grid;
-  gap: 9px;
+  gap: 12px;
 }
 
 .marked-block {
+  overflow: hidden;
   border: 1px solid #2b2d32;
-  border-left-width: 3px;
   border-radius: 10px;
   background: #0e0f11;
-  overflow: hidden;
 }
 
 .marked-block.ai {
-  border-left-color: #ef4444;
-  background: rgba(239, 68, 68, 0.045);
+  border-color: rgba(239, 68, 68, 0.35);
 }
 
 .marked-block.uncertain {
-  border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.045);
+  border-color: rgba(245, 158, 11, 0.35);
 }
 
 .marked-block.human {
-  border-left-color: #22c55e;
-  background: rgba(34, 197, 94, 0.045);
+  border-color: rgba(34, 197, 94, 0.35);
 }
 
 .marked-block summary {
@@ -248,10 +244,23 @@
   gap: 14px;
   padding: 12px 14px;
   cursor: pointer;
+  background: #111215;
 }
 
 .marked-block summary::-webkit-details-marker {
   display: none;
+}
+
+.marked-block.ai summary {
+  background: rgba(239, 68, 68, 0.055);
+}
+
+.marked-block.uncertain summary {
+  background: rgba(245, 158, 11, 0.055);
+}
+
+.marked-block.human summary {
+  background: rgba(34, 197, 94, 0.055);
 }
 
 .marked-meta {
@@ -272,28 +281,70 @@
 
 .marked-score {
   flex: none;
-  color: #b5b8be;
   font-size: 11px;
   font-weight: 700;
 }
 
+.marked-score.ai {
+  color: #fca5a5;
+}
+
+.marked-score.uncertain {
+  color: #fcd34d;
+}
+
+.marked-score.human {
+  color: #86efac;
+}
+
 .marked-body {
-  padding: 0 14px 14px;
+  padding: 16px;
   border-top: 1px solid #24262a;
 }
 
-.marked-text {
-  margin: 13px 0;
-  color: #d9dadd;
+.highlighted-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px 5px;
+  margin-bottom: 16px;
+  line-height: 1.85;
+}
+
+.text-highlight {
+  display: inline;
+  padding: 2px 5px 3px;
+  border-radius: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
   font-size: 13px;
-  line-height: 1.72;
-  white-space: pre-wrap;
+  line-height: 1.8;
+}
+
+.text-highlight.ai {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
+  box-shadow: inset 0 -1px 0 rgba(239, 68, 68, 0.8);
+}
+
+.text-highlight.uncertain {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  box-shadow: inset 0 -1px 0 rgba(245, 158, 11, 0.8);
+}
+
+.text-highlight.human {
+  background: rgba(34, 197, 94, 0.18);
+  color: #bbf7d0;
+  box-shadow: inset 0 -1px 0 rgba(34, 197, 94, 0.75);
 }
 
 .section-components {
   display: flex;
   gap: 7px;
   flex-wrap: wrap;
+  padding-top: 13px;
+  border-top: 1px solid #24262a;
 }
 
 .section-components span {
@@ -312,7 +363,10 @@
 
 .component-row {
   display: grid;
-  grid-template-columns: 165px minmax(90px, 1fr) 36px;
+  grid-template-columns:
+    165px
+    minmax(90px, 1fr)
+    36px;
   gap: 12px;
   align-items: center;
 }
@@ -346,8 +400,8 @@
 
 .component-meter span {
   display: block;
-  height: 100%;
   width: 0;
+  height: 100%;
   border-radius: inherit;
   background: #aeb1b7;
   transition: width 240ms ease;
@@ -380,6 +434,21 @@
   margin-top: 12px;
   font-size: 25px;
   letter-spacing: -0.04em;
+}
+
+.count-box.ai {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.count-box.uncertain {
+  border-color: rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.count-box.human {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.05);
 }
 
 .count-box.ai span,
