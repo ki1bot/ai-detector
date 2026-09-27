@@ -5,14 +5,75 @@ from typing import Iterable
 
 import numpy as np
 
+from detector.text import split_paragraphs, split_sentences, tokenize_words
+
 INDONESIAN_FUNCTION_WORDS = {
-    "yang", "dan", "di", "ke", "dari", "untuk", "dengan", "pada", "adalah", "ini",
-    "itu", "dalam", "sebagai", "oleh", "karena", "atau", "juga", "akan", "dapat", "tidak",
-    "tersebut", "lebih", "telah", "saat", "sehingga", "serta", "antara", "bagi", "terhadap",
-    "namun", "jika", "maka", "setelah", "sebelum", "melalui", "tentang", "hingga", "masih",
-    "sudah", "bisa", "menjadi", "merupakan", "agar", "bahwa", "secara", "setiap", "para",
-    "sangat", "mereka", "kami", "kita", "saya", "anda", "ia", "dia", "ada", "sebuah",
-    "suatu", "bukan", "belum", "hanya", "banyak",
+    "yang",
+    "dan",
+    "di",
+    "ke",
+    "dari",
+    "untuk",
+    "dengan",
+    "pada",
+    "adalah",
+    "ini",
+    "itu",
+    "dalam",
+    "sebagai",
+    "oleh",
+    "karena",
+    "atau",
+    "juga",
+    "akan",
+    "dapat",
+    "tidak",
+    "tersebut",
+    "lebih",
+    "telah",
+    "saat",
+    "sehingga",
+    "serta",
+    "antara",
+    "bagi",
+    "terhadap",
+    "namun",
+    "jika",
+    "maka",
+    "setelah",
+    "sebelum",
+    "melalui",
+    "tentang",
+    "hingga",
+    "masih",
+    "sudah",
+    "bisa",
+    "menjadi",
+    "merupakan",
+    "agar",
+    "bahwa",
+    "secara",
+    "setiap",
+    "para",
+    "sangat",
+    "mereka",
+    "kami",
+    "kita",
+    "saya",
+    "anda",
+    "ia",
+    "dia",
+    "ada",
+    "sebuah",
+    "suatu",
+    "bukan",
+    "belum",
+    "hanya",
+    "banyak",
+    "tanpa",
+    "ketika",
+    "tetapi",
+    "pun",
 }
 
 CONNECTORS = (
@@ -28,6 +89,8 @@ CONNECTORS = (
     "lebih lanjut",
     "di samping itu",
     "meskipun demikian",
+    "dengan kata lain",
+    "sebaliknya",
 )
 
 ENUMERATORS = (
@@ -53,6 +116,7 @@ STYLE_FEATURE_NAMES = (
     "lexical_diversity",
     "hapax_ratio",
     "function_word_ratio",
+    "function_word_diversity",
     "lexical_entropy",
     "punctuation_ratio",
     "comma_per_sentence",
@@ -65,6 +129,7 @@ STYLE_FEATURE_NAMES = (
     "quote_per_sentence",
     "digit_ratio",
     "uppercase_ratio",
+    "whitespace_ratio",
     "newline_ratio",
     "connector_per_sentence",
     "enumerator_per_sentence",
@@ -72,37 +137,16 @@ STYLE_FEATURE_NAMES = (
     "repeated_trigram_ratio",
     "sentence_start_repeat_ratio",
     "sentence_start_diversity",
+    "unique_sentence_ratio",
     "log_paragraph_count",
     "paragraph_length_mean",
     "paragraph_length_std",
+    "paragraph_length_cv",
     "long_sentence_ratio",
     "short_sentence_ratio",
     "sentence_burstiness",
+    "mean_token_frequency",
 )
-
-
-def tokenize_words(text: str) -> list[str]:
-    return re.findall(r"\b[\w'-]+\b", text.lower(), flags=re.UNICODE)
-
-
-def split_sentences(text: str) -> list[str]:
-    sentences = [
-        item.strip()
-        for item in re.split(r"(?<=[.!?])\s+|\n+", text)
-        if item.strip()
-    ]
-
-    return sentences or ([text.strip()] if text.strip() else [])
-
-
-def split_paragraphs(text: str) -> list[str]:
-    paragraphs = [
-        item.strip()
-        for item in re.split(r"\n\s*\n", text)
-        if item.strip()
-    ]
-
-    return paragraphs or ([text.strip()] if text.strip() else [])
 
 
 def _ngram_repeat_ratio(words: list[str], n: int) -> float:
@@ -110,7 +154,7 @@ def _ngram_repeat_ratio(words: list[str], n: int) -> float:
         return 0.0
 
     grams = [
-        tuple(words[index:index + n])
+        tuple(words[index : index + n])
         for index in range(len(words) - n + 1)
     ]
 
@@ -144,17 +188,17 @@ def _lexical_entropy(words: list[str]) -> float:
     return entropy / math.log(len(counts))
 
 
-def _sentence_start_metrics(sentences: list[str]) -> tuple[float, float]:
-    starts = []
+def _sentence_start_metrics(
+    sentences: list[str],
+) -> tuple[float, float]:
+    starts: list[tuple[str, ...]] = []
 
     for sentence in sentences:
         words = tokenize_words(sentence)
 
         if words:
             starts.append(
-                tuple(
-                    words[:min(3, len(words))]
-                )
+                tuple(words[: min(3, len(words))])
             )
 
     if not starts:
@@ -188,7 +232,8 @@ def extract_stylometry(text: str) -> list[float]:
         [
             len(tokenize_words(sentence))
             for sentence in sentences
-        ] or [0],
+        ]
+        or [0],
         dtype=np.float64,
     )
 
@@ -196,7 +241,8 @@ def extract_stylometry(text: str) -> list[float]:
         [
             len(word)
             for word in words
-        ] or [0],
+        ]
+        or [0],
         dtype=np.float64,
     )
 
@@ -204,12 +250,12 @@ def extract_stylometry(text: str) -> list[float]:
         [
             len(tokenize_words(paragraph))
             for paragraph in paragraphs
-        ] or [0],
+        ]
+        or [0],
         dtype=np.float64,
     )
 
     frequencies = Counter(words)
-
     unique_words = len(frequencies)
 
     hapax = sum(
@@ -218,10 +264,15 @@ def extract_stylometry(text: str) -> list[float]:
         if count == 1
     )
 
-    function_words = sum(
-        1
+    function_words = [
+        word
         for word in words
         if word in INDONESIAN_FUNCTION_WORDS
+    ]
+
+    function_word_diversity = (
+        len(set(function_words))
+        / max(len(function_words), 1)
     )
 
     letters = [
@@ -245,6 +296,11 @@ def extract_stylometry(text: str) -> list[float]:
         for character in text
     )
 
+    whitespace = sum(
+        character.isspace()
+        for character in text
+    )
+
     lowered = text.lower()
 
     connector_hits = sum(
@@ -262,8 +318,18 @@ def extract_stylometry(text: str) -> list[float]:
         for item in ENUMERATORS
     )
 
-    start_repeat, start_diversity = _sentence_start_metrics(
-        sentences
+    start_repeat, start_diversity = (
+        _sentence_start_metrics(sentences)
+    )
+
+    normalized_sentences = [
+        " ".join(tokenize_words(sentence))
+        for sentence in sentences
+    ]
+
+    unique_sentence_ratio = (
+        len(set(normalized_sentences))
+        / max(len(normalized_sentences), 1)
     )
 
     sentence_mean = float(
@@ -293,6 +359,19 @@ def extract_stylometry(text: str) -> list[float]:
         )
     )
 
+    paragraph_mean = float(
+        paragraph_lengths.mean()
+    )
+
+    paragraph_std = float(
+        paragraph_lengths.std()
+    )
+
+    paragraph_cv = (
+        paragraph_std
+        / max(paragraph_mean, 1.0)
+    )
+
     if len(sentence_lengths) > 1:
         burstiness = (
             float(
@@ -304,6 +383,19 @@ def extract_stylometry(text: str) -> list[float]:
         )
     else:
         burstiness = 0.0
+
+    mean_token_frequency = (
+        float(
+            np.mean(
+                [
+                    frequencies[word]
+                    for word in words
+                ]
+            )
+        )
+        if words
+        else 0.0
+    )
 
     return [
         float(np.log1p(word_count)),
@@ -317,7 +409,8 @@ def extract_stylometry(text: str) -> list[float]:
         float(word_lengths.std()),
         unique_words / word_count,
         hapax / word_count,
-        function_words / word_count,
+        len(function_words) / word_count,
+        function_word_diversity,
         _lexical_entropy(words),
         punctuation / char_count,
         text.count(",") / sentence_count,
@@ -328,11 +421,13 @@ def extract_stylometry(text: str) -> list[float]:
         (
             text.count("-")
             + text.count("—")
-        ) / sentence_count,
+        )
+        / sentence_count,
         (
             text.count("(")
             + text.count(")")
-        ) / sentence_count,
+        )
+        / sentence_count,
         (
             text.count('"')
             + text.count("“")
@@ -340,9 +435,11 @@ def extract_stylometry(text: str) -> list[float]:
             + text.count("'")
             + text.count("‘")
             + text.count("’")
-        ) / sentence_count,
+        )
+        / sentence_count,
         digits / char_count,
         uppercase / max(len(letters), 1),
+        whitespace / char_count,
         text.count("\n") / char_count,
         connector_hits / sentence_count,
         enumerator_hits / sentence_count,
@@ -350,9 +447,11 @@ def extract_stylometry(text: str) -> list[float]:
         _ngram_repeat_ratio(words, 3),
         start_repeat,
         start_diversity,
+        unique_sentence_ratio,
         float(np.log1p(paragraph_count)),
-        float(paragraph_lengths.mean()),
-        float(paragraph_lengths.std()),
+        paragraph_mean,
+        paragraph_std,
+        paragraph_cv,
         float(
             np.mean(
                 sentence_lengths >= 25
@@ -364,6 +463,7 @@ def extract_stylometry(text: str) -> list[float]:
             )
         ),
         burstiness,
+        mean_token_frequency,
     ]
 
 
@@ -372,9 +472,7 @@ def stylometry_matrix(
 ) -> np.ndarray:
     return np.asarray(
         [
-            extract_stylometry(
-                str(text)
-            )
+            extract_stylometry(str(text))
             for text in texts
         ],
         dtype=np.float64,
@@ -418,7 +516,10 @@ def meta_score_features(
                 char_scores
                 - style_scores
             ),
+            scores.min(axis=1),
+            scores.max(axis=1),
             scores.mean(axis=1),
+            np.median(scores, axis=1),
             scores.std(axis=1),
         ]
     )
@@ -443,16 +544,14 @@ def style_snapshot(
     text: str,
 ) -> dict[str, float]:
     words = tokenize_words(text)
-
     sentences = split_sentences(text)
 
     lengths = np.asarray(
         [
-            len(
-                tokenize_words(sentence)
-            )
+            len(tokenize_words(sentence))
             for sentence in sentences
-        ] or [0],
+        ]
+        or [0],
         dtype=np.float64,
     )
 

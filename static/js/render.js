@@ -1,65 +1,4 @@
-const textInput = document.getElementById("textInput");
-const fileInput = document.getElementById("fileInput");
-const analyzeButton = document.getElementById("analyzeButton");
-const clearButton = document.getElementById("clearButton");
-const counter = document.getElementById("counter");
-const fileName = document.getElementById("fileName");
-const errorBox = document.getElementById("errorBox");
-const resultSection = document.getElementById("resultSection");
-
-function countWords(text) {
-  const matches = text.trim().match(/[\p{L}\p{N}_'-]+/gu);
-
-  return matches ? matches.length : 0;
-}
-
-function setText(id, value) {
-  const element = document.getElementById(id);
-
-  if (element) {
-    element.textContent = value;
-  }
-}
-
-function setBar(id, value) {
-  const element = document.getElementById(id);
-
-  if (element) {
-    element.style.width = `${Math.max(0, Math.min(100, value))}%`;
-  }
-}
-
-function formatPercent(value) {
-  if (typeof value !== "number") {
-    return "-";
-  }
-
-  return `${(value * 100).toFixed(1)}%`;
-}
-
-function updateCounter() {
-  counter.textContent = `${countWords(textInput.value)} kata`;
-}
-
-function clearError() {
-  errorBox.textContent = "";
-
-  errorBox.classList.add("hidden");
-}
-
-function showError(message) {
-  errorBox.textContent = message;
-
-  errorBox.classList.remove("hidden");
-}
-
-function setLoading(active) {
-  analyzeButton.disabled = active;
-  clearButton.disabled = active;
-  fileInput.disabled = active;
-
-  analyzeButton.textContent = active ? "Memeriksa..." : "Periksa teks";
-}
+import { elements, formatPercent, setBar, setText } from "./dom.js";
 
 function verdictTitle(key) {
   if (key === "ai") {
@@ -101,7 +40,6 @@ function createSectionCard(section) {
   const badge = document.createElement("span");
 
   badge.className = `mini-badge ${section.label_key}`;
-
   badge.textContent = section.label;
 
   const score = document.createElement("strong");
@@ -109,7 +47,6 @@ function createSectionCard(section) {
   score.textContent = `${section.score}/100`;
 
   right.append(badge, score);
-
   summary.append(left, right);
 
   const body = document.createElement("div");
@@ -139,7 +76,6 @@ function createSectionCard(section) {
   });
 
   body.append(text, components);
-
   details.append(summary, body);
 
   return details;
@@ -147,7 +83,6 @@ function createSectionCard(section) {
 
 function renderNotes(notes) {
   const panel = document.getElementById("notesPanel");
-
   const list = document.getElementById("notesList");
 
   list.innerHTML = "";
@@ -171,19 +106,20 @@ function renderNotes(notes) {
 
 function renderModelInfo(model) {
   setText("modelName", model.name || "-");
-
   setText("modelVersion", model.version || "-");
-
   setText("selectiveAccuracy", formatPercent(model.selective_accuracy));
-
   setText("selectiveCoverage", formatPercent(model.selective_coverage));
-
   setText("falsePositiveRate", formatPercent(model.ai_false_positive_rate));
+  setText("balancedAccuracy", formatPercent(model.balanced_accuracy));
+
+  setText(
+    "rocAuc",
+    typeof model.roc_auc === "number" ? model.roc_auc.toFixed(3) : "-",
+  );
 
   setText("testSamples", model.test_samples ?? "-");
 
   const sources = model.sources || {};
-
   const sourceEntries = Object.entries(sources);
 
   const sourceText = sourceEntries.length
@@ -193,54 +129,40 @@ function renderModelInfo(model) {
   setText("sourceInfo", `Data pelatihan: ${sourceText}`);
 }
 
-function renderResult(data) {
+export function renderResult(data) {
   const badge = document.getElementById("verdictBadge");
 
   badge.className = `verdict-badge ${data.verdict_key}`;
-
   badge.textContent = data.verdict;
 
   setText(
     "confidenceText",
-    `Keyakinan ${data.confidence.toLowerCase()} · ${data.confidence_score}/100`,
+    `Reliabilitas ${data.confidence.toLowerCase()} · ${data.confidence_score}/100`,
   );
 
   setText("resultTitle", verdictTitle(data.verdict_key));
-
   setText("resultSummary", data.summary);
-
   setText("aiIndex", data.ai_index);
-
   setText("modelAgreement", `${data.model_agreement}%`);
-
   setText("sectionConsistency", `${data.section_consistency}%`);
-
   setText("wordCount", `${data.word_count} kata`);
-
   setText("sectionCount", data.section_count);
 
   const scoreRing = document.getElementById("scoreRing");
 
   scoreRing.style.setProperty("--score", data.ai_index);
-
   scoreRing.className = `score-ring ${data.verdict_key}`;
 
   setText("wordScore", data.components.word);
-
   setText("charScore", data.components.char);
-
   setText("styleScore", data.components.style);
 
   setBar("wordBar", data.components.word);
-
   setBar("charBar", data.components.char);
-
   setBar("styleBar", data.components.style);
 
   setText("aiSectionCount", data.section_summary.ai);
-
   setText("uncertainSectionCount", data.section_summary.uncertain);
-
   setText("humanSectionCount", data.section_summary.human);
 
   setText(
@@ -249,7 +171,6 @@ function renderResult(data) {
   );
 
   renderNotes(data.notes);
-
   renderModelInfo(data.model || {});
 
   const sectionsList = document.getElementById("sectionsList");
@@ -260,84 +181,10 @@ function renderResult(data) {
     sectionsList.appendChild(createSectionCard(section));
   });
 
-  resultSection.classList.remove("hidden");
+  elements.resultSection.classList.remove("hidden");
 
-  resultSection.scrollIntoView({
+  elements.resultSection.scrollIntoView({
     behavior: "smooth",
     block: "start",
   });
 }
-
-textInput.addEventListener("input", updateCounter);
-
-fileInput.addEventListener("change", () => {
-  fileName.textContent = fileInput.files[0]?.name || "Belum ada file";
-});
-
-clearButton.addEventListener("click", () => {
-  textInput.value = "";
-  fileInput.value = "";
-
-  fileName.textContent = "Belum ada file";
-
-  resultSection.classList.add("hidden");
-
-  clearError();
-
-  updateCounter();
-
-  textInput.focus();
-});
-
-analyzeButton.addEventListener("click", async () => {
-  clearError();
-
-  const text = textInput.value.trim();
-
-  const selectedFile = fileInput.files[0];
-
-  if (!text && !selectedFile) {
-    showError("Masukkan teks atau pilih dokumen terlebih dahulu.");
-
-    return;
-  }
-
-  const form = new FormData();
-
-  if (text) {
-    form.append("text", text);
-  }
-
-  if (selectedFile) {
-    form.append("file", selectedFile);
-  }
-
-  setLoading(true);
-
-  try {
-    const response = await fetch("/api/analyze", {
-      method: "POST",
-      body: form,
-    });
-
-    let payload;
-
-    try {
-      payload = await response.json();
-    } catch {
-      payload = {};
-    }
-
-    if (!response.ok) {
-      throw new Error(payload.detail || "Pemeriksaan gagal.");
-    }
-
-    renderResult(payload);
-  } catch (error) {
-    showError(error.message || "Terjadi kesalahan saat memeriksa teks.");
-  } finally {
-    setLoading(false);
-  }
-});
-
-updateCounter();

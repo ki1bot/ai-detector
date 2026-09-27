@@ -10,3 +10,4 @@ joblib>=1.5,<2
 datasets>=4.0,<5
 python-docx>=1.2,<2
 pypdf>=6.0,<7
+pytest>=8.4,<9

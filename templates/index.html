@@ -8,30 +8,27 @@
       content="AI Detector Bahasa Indonesia untuk memeriksa indikasi teks buatan AI pada dokumen."
     />
     <title>AI Detector Indonesia</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/css/base.css" />
+    <link rel="stylesheet" href="/static/css/components.css" />
+    <link rel="stylesheet" href="/static/css/responsive.css" />
   </head>
-
   <body>
     <div class="site-shell">
       <header class="topbar">
         <a class="brand" href="/" aria-label="AI Detector Indonesia">
           <span class="brand-mark">AD</span>
-
           <span>
             <strong>AI Detector</strong>
             <small>Bahasa Indonesia</small>
           </span>
         </a>
-
         <span class="topbar-note">Pemeriksaan teks lokal</span>
       </header>
 
       <main>
         <section class="intro">
           <p class="kicker">Pemeriksaan dokumen</p>
-
           <h1>Cek apakah sebuah teks menunjukkan pola tulisan AI.</h1>
-
           <p class="intro-copy">
             Tempel teks atau unggah dokumen. Model membandingkan pola kata,
             karakter, dan gaya penulisan lalu menandai bagian yang paling perlu
@@ -44,10 +41,8 @@
             <div class="card-head">
               <div>
                 <h2>Teks yang diperiksa</h2>
-
-                <p>Minimal 40 kata. TXT, MD, DOCX, dan PDF berbasis teks.</p>
+                <p>Minimal 50 kata. TXT, MD, DOCX, dan PDF berbasis teks.</p>
               </div>
-
               <span id="counter" class="counter">0 kata</span>
             </div>
 
@@ -60,7 +55,6 @@
             <div class="input-actions">
               <label class="file-button" for="fileInput">
                 Pilih dokumen
-
                 <input
                   id="fileInput"
                   type="file"
@@ -68,7 +62,7 @@
                 />
               </label>
 
-              <span id="fileName" class="file-name"> Belum ada file </span>
+              <span id="fileName" class="file-name">Belum ada file</span>
 
               <button
                 id="clearButton"
@@ -96,22 +90,20 @@
             <dl>
               <div>
                 <dt>Indeks AI</dt>
-
-                <dd>Skor model 0–100. Ini bukan persentase kepastian.</dd>
+                <dd>Skor klasifikasi 0–100. Ini bukan persentase kepastian.</dd>
               </div>
 
               <div>
                 <dt>Kesepakatan model</dt>
-
                 <dd>Seberapa dekat hasil tiga jenis pemeriksaan.</dd>
               </div>
 
               <div>
                 <dt>Belum cukup bukti</dt>
-
                 <dd>
-                  Dipakai saat skor berada di area abu-abu atau bagian dokumen
-                  saling bertentangan.
+                  Dipakai saat skor berada di area abu-abu, model saling tidak
+                  sepakat, atau karakteristik teks berada di luar cakupan yang
+                  aman.
                 </dd>
               </div>
             </dl>
@@ -134,12 +126,11 @@
                   </span>
 
                   <span id="confidenceText" class="confidence-text">
-                    Keyakinan rendah
+                    Reliabilitas rendah
                   </span>
                 </div>
 
                 <h2 id="resultTitle">Hasil belum tersedia</h2>
-
                 <p id="resultSummary" class="result-summary"></p>
               </div>
 
@@ -179,7 +170,6 @@
               <div class="panel-head">
                 <div>
                   <h3>Hasil per pemeriksaan</h3>
-
                   <p>Tiga model membaca teks dari sisi yang berbeda.</p>
                 </div>
               </div>
@@ -214,8 +204,7 @@
                 <div class="component-row">
                   <div class="component-label">
                     <strong>Gaya tulis</strong>
-
-                    <span> Panjang kalimat, variasi, dan pengulangan </span>
+                    <span>Panjang kalimat, variasi, dan pengulangan</span>
                   </div>
 
                   <div class="component-meter">
@@ -231,7 +220,6 @@
               <div class="panel-head">
                 <div>
                   <h3>Ringkasan bagian</h3>
-
                   <p>Jumlah bagian berdasarkan ambang keputusan model.</p>
                 </div>
               </div>
@@ -259,7 +247,6 @@
             <div class="panel-head">
               <div>
                 <h3>Catatan</h3>
-
                 <p>Hal yang perlu diperhatikan sebelum mengambil kesimpulan.</p>
               </div>
             </div>
@@ -271,7 +258,6 @@
             <div class="panel-head panel-head-inline">
               <div>
                 <h3>Bagian dokumen</h3>
-
                 <p>
                   Lihat skor tiap bagian untuk menemukan perubahan pola di dalam
                   teks.
@@ -315,6 +301,16 @@
                 </div>
 
                 <div>
+                  <span>Balanced accuracy</span>
+                  <strong id="balancedAccuracy">-</strong>
+                </div>
+
+                <div>
+                  <span>ROC-AUC</span>
+                  <strong id="rocAuc">-</strong>
+                </div>
+
+                <div>
                   <span>Data uji</span>
                   <strong id="testSamples">-</strong>
                 </div>
@@ -324,8 +320,8 @@
 
               <p class="disclaimer">
                 Hasil ini membantu pemeriksaan, bukan bukti kepengarangan. Teks
-                manusia dapat terlihat seperti AI dan teks AI yang diedit dapat
-                lolos dari detector.
+                manusia dapat terlihat seperti AI dan teks AI yang diedit atau
+                diparafrase dapat lolos dari detector.
               </p>
             </div>
           </details>
@@ -333,6 +329,6 @@
       </main>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
   </body>
 </html>
