@@ -1,0 +1,162 @@
+.site-shell {
+  width: min(1160px, calc(100% - 40px));
+  margin: 0 auto;
+  padding-bottom: 72px;
+}
+
+.topbar {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #25272b;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #3a3d42;
+  border-radius: 10px;
+  background: #141518;
+  color: #f5f5f5;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.brand-copy strong,
+.brand-copy small {
+  display: block;
+}
+
+.brand-copy strong {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.brand-copy small {
+  margin-top: 2px;
+  color: #8e929a;
+  font-size: 11px;
+}
+
+.topbar-note {
+  color: #8e929a;
+  font-size: 12px;
+}
+
+main {
+  padding-top: 54px;
+}
+
+.intro {
+  max-width: 780px;
+  margin-bottom: 30px;
+}
+
+.eyebrow {
+  margin-bottom: 10px;
+  color: #9da1a9;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin-bottom: 16px;
+  max-width: 760px;
+  font-size: clamp(36px, 5vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  font-weight: 760;
+}
+
+.intro-copy {
+  max-width: 730px;
+  margin-bottom: 0;
+  color: #a8abb2;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.card {
+  background: #121316;
+  border: 1px solid #26282d;
+  border-radius: 14px;
+}
+
+.card-head,
+.panel-head,
+.panel-head-inline {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.card-head {
+  margin-bottom: 16px;
+}
+
+.card-head.compact {
+  margin-bottom: 14px;
+}
+
+.card-head h2,
+.panel-head h3 {
+  margin-bottom: 5px;
+  font-size: 15px;
+  font-weight: 720;
+  letter-spacing: -0.015em;
+}
+
+.card-head p,
+.panel-head p {
+  margin-bottom: 0;
+  color: #858991;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.result-section {
+  margin-top: 18px;
+  display: grid;
+  gap: 14px;
+  scroll-margin-top: 18px;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 14px;
+}
+
+.panel {
+  padding: 20px;
+}
+
+.panel-head {
+  margin-bottom: 18px;
+}
+
+.panel-head-inline {
+  margin-bottom: 14px;
+  align-items: center;
+}
